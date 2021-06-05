@@ -234,6 +234,8 @@ void Device::serviceScanDone()
 
 void Device::connectToService(const QString &uuid)
 {
+    qDebug() << "connectToService: " << uuid;
+
     QLowEnergyService *service = nullptr;
     for (auto s: qAsConst(m_services)) {
         auto serviceInfo = qobject_cast<ServiceInfo *>(s);
@@ -246,12 +248,16 @@ void Device::connectToService(const QString &uuid)
         }
     }
 
-    if (!service)
+    if (!service) {
+        qDebug() << "yikers";
         return;
+    }
 
     qDeleteAll(m_characteristics);
     m_characteristics.clear();
     emit characteristicsUpdated();
+
+    qDebug() << "service->state(): " << service->state();
 
     if (service->state() == QLowEnergyService::DiscoveryRequired) {
         //! [les-service-3]
@@ -263,9 +269,15 @@ void Device::connectToService(const QString &uuid)
         return;
     }
 
+    // Jake: we only get here when we back out of, and then re-enter, the service page for the given service
+    qDebug() << "discovery already done";
+
     //discovery already done
     const QList<QLowEnergyCharacteristic> chars = service->characteristics();
     for (const QLowEnergyCharacteristic &ch : chars) {
+        qDebug() << "characteristic: " << ch.name();
+        qDebug() << "value: " << ch.value();
+
         auto cInfo = new CharacteristicInfo(ch);
         m_characteristics.append(cInfo);
     }
@@ -315,6 +327,8 @@ void Device::deviceDisconnected()
 
 void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
 {
+    qDebug() << "serviceDetailsDiscovered";
+
     if (newState != QLowEnergyService::ServiceDiscovered) {
         // do not hang in "Scanning for characteristics" mode forever
         // in case the service discovery failed
@@ -340,10 +354,29 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     for (const QLowEnergyCharacteristic &ch : chars) {
         auto cInfo = new CharacteristicInfo(ch);
         m_characteristics.append(cInfo);
-    }
     //! [les-chars]
 
+        QLowEnergyDescriptor notification = ch.descriptor(
+                QBluetoothUuid::ClientCharacteristicConfiguration);
+        if (!notification.isValid()) {
+            qDebug() << "notification is not valid";
+            return;
+        }
+        // Enable notifications!!
+        connect(service, SIGNAL(characteristicChanged(QLowEnergyCharacteristic,QByteArray)),
+                this, SLOT(updateCharacteristicsList(QLowEnergyCharacteristic,QByteArray)));
+
+        service->writeDescriptor(notification, QByteArray::fromHex("0100")); // enables.. TODO look up the bitmask definition
+    }
+
     emit characteristicsUpdated();
+}
+
+void Device::updateCharacteristicsList(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
+{
+    qDebug() << "<<<<<<<< updateCharacteristicsList";
+    qDebug() << "characteristic: " << characteristic.name();
+    qDebug() << "newValue: " << (uint8_t)newValue[0]; // lol this took me way too long
 }
 
 void Device::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error error)

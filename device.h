@@ -112,6 +112,8 @@ private slots:
     // QLowEnergyService related
     void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState);
 
+    void updateCharacteristicsList(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue);
+
 Q_SIGNALS:
     void devicesUpdated();
     void servicesUpdated();

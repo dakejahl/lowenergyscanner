@@ -71,6 +71,7 @@ Rectangle {
     Connections {
         target: device
         onCharacteristicsUpdated: {
+            console.info("onCharacteristicsUpdated")
             menu.menuText = "Back"
             if (characteristicview.count === 0) {
                 info.dialogText = "No characteristic found"

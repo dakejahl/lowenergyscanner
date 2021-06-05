@@ -113,6 +113,9 @@ QString CharacteristicInfo::getValue() const
     }
 
     result = a;
+
+    qDebug() << "CharacteristicInfo::getValue(): result: " << result;
+
     result += QLatin1Char('\n');
     result += a.toHex();
 

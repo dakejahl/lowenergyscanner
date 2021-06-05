@@ -348,16 +348,14 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
     }
 
 
+    // Fill in the Characteristics data and set up notifications.
 
-    //! [les-chars]
     const QList<QLowEnergyCharacteristic> chars = service->characteristics();
     for (const QLowEnergyCharacteristic &ch : chars) {
         auto cInfo = new CharacteristicInfo(ch);
         m_characteristics.append(cInfo);
-    //! [les-chars]
 
-        QLowEnergyDescriptor notification = ch.descriptor(
-                QBluetoothUuid::ClientCharacteristicConfiguration);
+        QLowEnergyDescriptor notification = ch.descriptor(QBluetoothUuid::ClientCharacteristicConfiguration);
         if (!notification.isValid()) {
             qDebug() << "notification is not valid";
             return;
@@ -377,6 +375,15 @@ void Device::updateCharacteristicsList(const QLowEnergyCharacteristic &character
     qDebug() << "<<<<<<<< updateCharacteristicsList";
     qDebug() << "characteristic: " << characteristic.name();
     qDebug() << "newValue: " << (uint8_t)newValue[0]; // lol this took me way too long
+
+    for (QObject* ch : m_characteristics) {
+        auto cInfo = static_cast<CharacteristicInfo*>(ch);
+        // auto* replacement = static_cast<QLowEnergyCharacteristic>(ch)
+        if (cInfo->getName() == characteristic.name()) {
+            qDebug() << "updating!";
+            cInfo->setCharacteristic(characteristic);
+        }
+    }
 }
 
 void Device::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error error)

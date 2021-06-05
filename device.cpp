@@ -275,9 +275,6 @@ void Device::connectToService(const QString &uuid)
     //discovery already done
     const QList<QLowEnergyCharacteristic> chars = service->characteristics();
     for (const QLowEnergyCharacteristic &ch : chars) {
-        qDebug() << "characteristic: " << ch.name();
-        qDebug() << "value: " << ch.value();
-
         auto cInfo = new CharacteristicInfo(ch);
         m_characteristics.append(cInfo);
     }
@@ -327,8 +324,6 @@ void Device::deviceDisconnected()
 
 void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
 {
-    qDebug() << "serviceDetailsDiscovered";
-
     if (newState != QLowEnergyService::ServiceDiscovered) {
         // do not hang in "Scanning for characteristics" mode forever
         // in case the service discovery failed
@@ -347,9 +342,7 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
         return;
     }
 
-
     // Fill in the Characteristics data and set up notifications.
-
     const QList<QLowEnergyCharacteristic> chars = service->characteristics();
     for (const QLowEnergyCharacteristic &ch : chars) {
         auto cInfo = new CharacteristicInfo(ch);
@@ -372,15 +365,9 @@ void Device::serviceDetailsDiscovered(QLowEnergyService::ServiceState newState)
 
 void Device::updateCharacteristicsList(const QLowEnergyCharacteristic &characteristic, const QByteArray &newValue)
 {
-    qDebug() << "<<<<<<<< updateCharacteristicsList";
-    qDebug() << "characteristic: " << characteristic.name();
-    qDebug() << "newValue: " << (uint8_t)newValue[0]; // lol this took me way too long
-
     for (QObject* ch : m_characteristics) {
         auto cInfo = static_cast<CharacteristicInfo*>(ch);
-        // auto* replacement = static_cast<QLowEnergyCharacteristic>(ch)
         if (cInfo->getName() == characteristic.name()) {
-            qDebug() << "updating!";
             cInfo->setCharacteristic(characteristic);
         }
     }
